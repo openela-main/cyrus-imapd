@@ -1,0 +1,68 @@
+diff --git a/lib/imapoptions b/lib/imapoptions
+index 37f8371..898b943 100644
+--- a/lib/imapoptions
++++ b/lib/imapoptions
+@@ -2207,12 +2207,12 @@ product version in the capabilities
+ { "tls_cert_file", NULL, STRING, "2.5.0", "tls_server_cert" }
+ /* Deprecated in favor of \fItls_server_cert\fR. */
+ 
+-{ "tls_cipher_list", "DEFAULT", STRING, "2.5.0", "tls_ciphers" }
++{ "tls_cipher_list", "PROFILE=SYSTEM", STRING, "2.5.0", "tls_ciphers" }
+ /* Deprecated in favor of \fItls_ciphers\fR. */
+ 
+-{ "tls_ciphers", "DEFAULT", STRING }
++{ "tls_ciphers", "PROFILE=SYSTEM", STRING }
+ /* The list of SSL/TLS ciphers to allow.  The format of the string
+-   (and definition of "DEFAULT") is described in \fBciphers(1)\fR.
++   (and definition of "PROFILE=SYSTEM") is described in \fBciphers(1)\fR.
+ .PP
+    See also Mozilla's server-side TLS recommendations:
+ .PP
+diff --git a/doc/html/_sources/imap/reference/manpages/configs/imapd.conf.txt b/doc/html/_sources/imap/reference/manpages/configs/imapd.conf.txt
+index c45d94b..495a2c7 100644
+--- a/doc/html/_sources/imap/reference/manpages/configs/imapd.conf.txt
++++ b/doc/html/_sources/imap/reference/manpages/configs/imapd.conf.txt
+@@ -4298,7 +4298,7 @@ FIELD DESCRIPTIONS
+ 
+     .. startblob tls_cipher_list
+ 
+-    ``tls_cipher_list:`` DEFAULT
++    ``tls_cipher_list:`` PROFILE=SYSTEM
+ 
+         Deprecated in favor of *tls_ciphers*. 
+ 
+@@ -4307,10 +4307,10 @@ FIELD DESCRIPTIONS
+ 
+     .. startblob tls_ciphers
+ 
+-    ``tls_ciphers:`` DEFAULT
++    ``tls_ciphers:`` PROFILE=SYSTEM
+ 
+         The list of SSL/TLS ciphers to allow.  The format of the string
+-        (and definition of "DEFAULT") is described in **ciphers(1)**.
++        (and definition of "PROFILE=SYSTEM") is described in **ciphers(1)**.
+ 
+         See also Mozilla's server-side TLS recommendations:
+ 
+diff --git a/doc/text/imap/reference/manpages/configs/imapd.conf.txt b/doc/text/imap/reference/manpages/configs/imapd.conf.txt
+index 1801cd7..7c77154 100644
+--- a/doc/text/imap/reference/manpages/configs/imapd.conf.txt
++++ b/doc/text/imap/reference/manpages/configs/imapd.conf.txt
+@@ -2675,14 +2675,14 @@ FIELD DESCRIPTIONS
+ 
+       Deprecated in favor of *tls_server_cert*.
+ 
+-   "tls_cipher_list:" DEFAULT
++   "tls_cipher_list:" PROFILE=SYSTEM
+ 
+       Deprecated in favor of *tls_ciphers*.
+ 
+-   "tls_ciphers:" DEFAULT
++   "tls_ciphers:" PROFILE=SYSTEM
+ 
+       The list of SSL/TLS ciphers to allow.  The format of the string
+-      (and definition of "DEFAULT") is described in **ciphers(1)**.
++      (and definition of "PROFILE=SYSTEM") is described in **ciphers(1)**.
+ 
+       See also Mozilla's server-side TLS recommendations:
+ 

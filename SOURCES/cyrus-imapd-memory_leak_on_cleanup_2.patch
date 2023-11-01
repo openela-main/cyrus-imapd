@@ -1,0 +1,102 @@
+diff --git a/ptclient/ldap.c b/ptclient/ldap.c
+index 7e48879..dafa724 100644
+--- a/ptclient/ldap.c
++++ b/ptclient/ldap.c
+@@ -932,7 +932,7 @@ static int ptsmodule_get_dn(
+     {
+         rc = ptsmodule_expand_tokens(ptsm->filter, canon_id, NULL, &filter);
+         if (rc != PTSM_OK)
+-            return rc;
++            goto done;
+ 
+         if (ptsm->domain_base_dn && ptsm->domain_base_dn[0] != '\0' && (strrchr(canon_id, '@') != NULL)) {
+             syslog(LOG_DEBUG, "Attempting to get domain for %s from %s", canon_id, ptsm->domain_base_dn);
+@@ -955,19 +955,23 @@ static int ptsmodule_get_dn(
+                     ldap_unbind(ptsm->ld);
+                     ptsm->ld = NULL;
+                     syslog(LOG_ERR, "LDAP not available: %s", ldap_err2string(rc));
+-                    return PTSM_RETRY;
++                    rc = PTSM_RETRY;
++                    goto done;
+                 }
+ 
+                 syslog(LOG_ERR, "LDAP search for domain failed: %s", ldap_err2string(rc));
+-                return PTSM_FAIL;
++                rc = PTSM_FAIL;
++                goto done;
+             }
+ 
+             if (ldap_count_entries(ptsm->ld, res) < 1) {
+                 syslog(LOG_ERR, "No domain %s found", domain);
+-                return PTSM_FAIL;
++                rc = PTSM_FAIL;
++                goto done;
+             } else if (ldap_count_entries(ptsm->ld, res) > 1) {
+                 syslog(LOG_ERR, "Multiple domains %s found", domain);
+-                return PTSM_FAIL;
++                rc = PTSM_FAIL;
++                goto done;
+             } else {
+                 if ((entry = ldap_first_entry(ptsm->ld, res)) != NULL) {
+                     if ((vals = ldap_get_values(ptsm->ld, entry, ptsm->domain_result_attribute)) != NULL) {
+@@ -982,7 +986,7 @@ static int ptsmodule_get_dn(
+                     }
+ 
+                     if (rc != PTSM_OK) {
+-                        return rc;
++                        goto done;
+                     } else {
+                         base = xstrdup(ptsm->base);
+                         syslog(LOG_DEBUG, "Continuing with ptsm->base: %s", ptsm->base);
+@@ -993,23 +997,23 @@ static int ptsmodule_get_dn(
+         } else {
+             rc = ptsmodule_expand_tokens(ptsm->base, canon_id, NULL, &base);
+             if (rc != PTSM_OK)
+-                return rc;
++                goto done;
+         }
+ 
+         rc = ldap_search_st(ptsm->ld, base, ptsm->scope, filter, attrs, 0, &(ptsm->timeout), &res);
+ 
+         if (rc != LDAP_SUCCESS) {
+             syslog(LOG_DEBUG, "Searching %s with %s failed", base, base);
+-            free(filter);
+-            free(base);
+ 
+             if (rc == LDAP_SERVER_DOWN) {
+                 ldap_unbind(ptsm->ld);
+                 ptsm->ld = NULL;
+-                return PTSM_RETRY;
++                rc = PTSM_RETRY;
++                goto done;
+             }
+ 
+-            return PTSM_FAIL;
++            rc = PTSM_FAIL;
++            goto done;
+         }
+ 
+         free(filter);
+@@ -1035,6 +1039,13 @@ static int ptsmodule_get_dn(
+     }
+ 
+     return (*ret ? PTSM_OK : PTSM_FAIL);
++
++ done:
++    if (filter)
++        free(filter);
++    if (base)
++        free(base);
++    return rc;
+ }
+ 
+ 
+@@ -1344,7 +1355,7 @@ static int ptsmodule_make_authstate_group(
+     rc = ptsmodule_connect();
+     if (rc != PTSM_OK) {
+         *reply = "ptsmodule_connect() failed";
+-        goto done;;
++        goto done;
+     }
+ 
+     rc = ptsmodule_expand_tokens(ptsm->group_filter, canon_id+6, NULL, &filter);
