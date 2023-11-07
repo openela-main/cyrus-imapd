@@ -1,0 +1,20 @@
+diff --git a/imap/squatter.c b/imap/squatter.c
+index 4419379..d00f003 100644
+--- a/imap/squatter.c
++++ b/imap/squatter.c
+@@ -408,8 +408,13 @@ static void expand_mboxnames(strarray_t *sa, int nmboxnames,
+         else {
+             /* Translate any separators in mailboxname */
+             char *intname = mboxname_from_external(mboxnames[i], &squat_namespace, NULL);
+-            int flags = recursive_flag ? 0 : MBOXTREE_SKIP_CHILDREN;
+-            mboxlist_mboxtree(intname, addmbox, sa, flags);
++            if (!intname || *intname == '\0') {
++                fprintf(stderr, "Mailbox %s: %s\n",
++                        mboxnames[i], error_message(IMAP_MAILBOX_BADNAME));
++            } else {
++                int flags = recursive_flag ? 0 : MBOXTREE_SKIP_CHILDREN;
++                mboxlist_mboxtree(intname, addmbox, sa, flags);
++            }
+             free(intname);
+         }
+ 

@@ -1,0 +1,41 @@
+diff --git a/Cassandane/Util/Log.pm b/Cassandane/Util/Log.pm
+index 17d2cc7..11b747f 100644
+--- a/Cassandane/Util/Log.pm
++++ b/Cassandane/Util/Log.pm
+@@ -51,9 +51,6 @@ our @EXPORT = qw(
+ 
+ my $verbose = 0;
+ 
+-openlog('cassandane', '', LOG_LOCAL6)
+-    or die "Cannot openlog";
+-
+ sub xlog
+ {
+     my $id;
+@@ -70,7 +67,6 @@ sub xlog
+     $msg .= "($id) " if $id;
+     $msg .= join(' ', @_);
+     print STDERR "$msg\n";
+-    syslog(LOG_ERR, "$msg");
+ }
+ 
+ sub set_verbose
+diff --git a/Cassandane/Instance.pm b/Cassandane/Instance.pm
+index bdfa44f..e852599 100644
+--- a/Cassandane/Instance.pm
++++ b/Cassandane/Instance.pm
+@@ -2030,12 +2030,8 @@ sub setup_syslog_replacement
+ {
+     my ($self) = @_;
+ 
+-    if (not(-e 'utils/syslog.so') || not(-e 'utils/syslog_probe')) {
+-        xlog "utils/syslog.so not found (do you need to run 'make'?)";
+-        xlog "tests will not examine syslog output";
+-        $self->{have_syslog_replacement} = 0;
+-        return;
+-    }
++    $self->{have_syslog_replacement} = 0;
++    return;
+ 
+     $self->{syslog_fname} = "$self->{basedir}/conf/log/syslog";
+     $self->{have_syslog_replacement} = 1;
