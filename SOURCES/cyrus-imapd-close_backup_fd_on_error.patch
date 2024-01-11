@@ -1,0 +1,23 @@
+From 725e1efbd923c6d15ba639e17bfd0baabc619daa Mon Sep 17 00:00:00 2001
+From: Pavel Zhukov <pzhukov@redhat.com>
+Date: Mon, 1 Oct 2018 15:55:35 +0200
+Subject: [PATCH] Close file descriptior in case of error
+
+Make static code analizers happy.
+If stat() failed for some reason it may lead backup fd unclosed.
+---
+ backup/lcb.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/backup/lcb.c b/backup/lcb.c
+index 8c4a0e31a..9a04b08f2 100644
+--- a/backup/lcb.c
++++ b/backup/lcb.c
+@@ -182,6 +182,7 @@ HIDDEN int backup_real_open(struct backup **backupp,
+         if (r) {
+             syslog(LOG_ERR, "IOERROR: (f)stat %s: %m", backup->data_fname);
+             r = IMAP_IOERROR;
++            close(fd);
+             goto error;
+         }
+ 

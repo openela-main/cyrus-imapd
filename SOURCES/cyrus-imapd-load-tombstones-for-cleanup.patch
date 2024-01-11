@@ -1,0 +1,17 @@
+diff --git a/imap/cyr_expire.c b/imap/cyr_expire.c
+index bcb40ea..747414a 100644
+--- a/imap/cyr_expire.c
++++ b/imap/cyr_expire.c
+@@ -628,9 +628,10 @@ int main(int argc, char *argv[])
+         }
+ 
+         if (do_user)
+-            mboxlist_usermboxtree(do_user, expire, &erock, MBOXTREE_DELETED);
++            mboxlist_usermboxtree(do_user, expire, &erock, MBOXTREE_DELETED|MBOXTREE_TOMBSTONES);
+         else
+-            mboxlist_allmbox(find_prefix, expire, &erock, 0);
++            mboxlist_allmbox(find_prefix, expire, &erock,
++                             MBOXTREE_TOMBSTONES);
+ 
+         syslog(LOG_NOTICE, "Expired %lu and expunged %lu out of %lu "
+                             "messages from %lu mailboxes",

@@ -1,0 +1,66 @@
+diff --git a/Cassandane/Instance.pm b/cassandane/Cassandane/Instance.pm
+index 1561143..c60396e 100644
+--- a/Cassandane/Instance.pm
++++ b/Cassandane/Instance.pm
+@@ -166,7 +166,7 @@ sub get_version
+     my $cyrus_master;
+     foreach my $d (qw( bin sbin libexec libexec/cyrus-imapd lib cyrus/bin ))
+     {
+-	my $try = "$cyrus_destdir$cyrus_prefix/$d/master";
++	my $try = "$cyrus_destdir$cyrus_prefix/$d/cyrus-master";
+ 	if (-x $try) {
+ 	    $cyrus_master = $try;
+ 	    last;
+diff --git a/Cassandane/Instance.pm b/Cassandane/Instance.pm
+index c60396e..7b2883a 100644
+--- a/Cassandane/Instance.pm
++++ b/Cassandane/Instance.pm
+@@ -546,7 +546,7 @@ sub _pid_file
+ {
+     my ($self, $name) = @_;
+ 
+-    $name ||= 'master';
++    $name ||= 'cyrus-master';
+ 
+     return $self->{basedir} . "/run/$name.pid";
+ }
+@@ -569,7 +569,7 @@ sub _list_pid_files
+     closedir(RUNDIR);
+ 
+     @pidfiles = sort { $a cmp $b } @pidfiles;
+-    @pidfiles = ( 'master', grep { $_ ne 'master' } @pidfiles );
++    @pidfiles = ( 'cyrus-master', grep { $_ ne 'cyrus-master' } @pidfiles );
+ 
+     return @pidfiles;
+ }
+@@ -877,7 +877,7 @@ sub _start_master
+     # Now start the master process.
+     my @cmd =
+     (
+-	'master',
++	'cyrus-master',
+ 	# The following is added automatically by _fork_command:
+ 	# '-C', $self->_imapd_conf(),
+ 	'-l', '255',
+@@ -886,7 +886,7 @@ sub _start_master
+ 	'-M', $self->_master_conf(),
+     );
+     if (get_verbose) {
+-	my $logfile = $self->{basedir} . '/conf/master.log';
++	my $logfile = $self->{basedir} . '/conf/cyrus-master.log';
+ 	xlog "_start_master: logging to $logfile";
+ 	push(@cmd, '-L', $logfile);
+     }
+diff --git a/Cassandane/Instance.pm b/Cassandane/Instance.pm
+index 7b2883a..0c1e5fb 100644
+--- a/Cassandane/Instance.pm
++++ b/Cassandane/Instance.pm
+@@ -1301,7 +1301,7 @@ sub send_sighup
+     return if ($self->{_stopped});
+     xlog "sighup";
+ 
+-    my $pid = $self->_read_pid_file('master') or return;
++    my $pid = $self->_read_pid_file('cyrus-master') or return;
+     kill(SIGHUP, $pid) or die "Can't send signal SIGHUP to pid $pid: $!";
+     return 1;
+ }

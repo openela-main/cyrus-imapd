@@ -1,0 +1,38 @@
+From 5d00f649b4d2a599905d1b9290c91a769909741d Mon Sep 17 00:00:00 2001
+From: Pavel Zhukov <pzhukov@redhat.com>
+Date: Mon, 24 Sep 2018 17:24:48 +0200
+Subject: [PATCH] Close backup on failure.
+
+Static analizers report this as memory leak issue.
+---
+ backup/ctl_backups.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/backup/ctl_backups.c b/backup/ctl_backups.c
+index 3d817e743..e532eedb7 100644
+--- a/backup/ctl_backups.c
++++ b/backup/ctl_backups.c
+@@ -955,6 +955,7 @@ static int lock_run_pipe(const char *userid, const char *fname,
+ 
+     if (r) {
+         printf("NO failed (%s)\n", error_message(r));
++        r = backup_close(&backup);
+         return EC_SOFTWARE; // FIXME would something else be more appropriate?
+     }
+ 
+@@ -993,6 +994,7 @@ static int lock_run_sqlite(const char *userid, const char *fname,
+         fprintf(stderr, "unable to lock %s: %s\n",
+                 userid ? userid : fname,
+                 error_message(r));
++        r = backup_close(&backup);
+         return EC_SOFTWARE;
+     }
+ 
+@@ -1053,6 +1055,7 @@ static int lock_run_exec(const char *userid, const char *fname,
+         fprintf(stderr, "unable to lock %s: %s\n",
+                 userid ? userid : fname,
+                 error_message(r));
++        r = backup_close(&backup);
+         return EC_SOFTWARE;
+     }
+ 

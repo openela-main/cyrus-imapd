@@ -1,0 +1,21 @@
+diff --git a/Cassandane/Util/Log.pm b/Cassandane/Util/Log.pm
+index 9cd93d5..8d3b3c1 100644
+--- a/Cassandane/Util/Log.pm
++++ b/Cassandane/Util/Log.pm
+@@ -52,16 +52,12 @@ our @EXPORT = qw(
+ 
+ my $verbose = 0;
+ 
+-openlog('cassandane', '', LOG_LOCAL6)
+-    or die "Cannot openlog";
+-
+ sub xlog
+ {
+     my ($pkg, $file, $line) = caller;
+     $pkg =~ s/^Cassandane:://;
+     my $msg = "=====> " . $pkg . "[" . $line . "] " . join(' ', @_);
+     print STDERR "$msg\n";
+-    syslog(LOG_ERR, "$msg");
+ }
+ 
+ sub set_verbose
