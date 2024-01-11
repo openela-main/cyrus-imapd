@@ -1,0 +1,25 @@
+commit a8ccdaf109b85cedfd609678d95f7b7d5fdb91f5
+Author: ellie timoney <ellie@fastmail.com>
+Date:   Mon Jun 7 12:00:27 2021 +1000
+
+    lmtpd: shared mailboxes don't have conversations to lock
+    
+    Fixes #3488
+
+diff --git a/imap/lmtpd.c b/imap/lmtpd.c
+index 498bb8765..dc9ca21bc 100644
+--- a/imap/lmtpd.c
++++ b/imap/lmtpd.c
+@@ -843,8 +843,10 @@ int deliver(message_data_t *msgdata, char *authuser,
+             // lock conversations for the duration of delivery, so nothing else can read
+             // the state of any mailbox while the delivery is half done
+             struct conversations_state *state = NULL;
+-            r = conversations_open_user(mbname_userid(mbname), 0/*shared*/, &state);
+-            if (r) goto setstatus;
++            if (mbname_userid(mbname)) {
++                r = conversations_open_user(mbname_userid(mbname), 0/*shared*/, &state);
++                if (r) goto setstatus;
++            }
+ 
+             /* local mailbox */
+             mydata.cur_rcpt = n;
