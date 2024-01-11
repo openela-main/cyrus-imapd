@@ -14,7 +14,7 @@
 
 Name: cyrus-imapd
 Version: 3.4.1
-Release: 7%{?dist}
+Release: 10%{?dist}
 
 
 %define ssl_pem_file_prefix /etc/pki/%name/%name
@@ -70,6 +70,7 @@ Source15: README.rpm
 Source16: cyrus-imapd.service
 Source17: cyrus-imapd-init.service
 Source18: cyrus-imapd.tmpfiles.conf
+Source19: cyrus-imapd.sysusers
 
 # Source files for running the Cassandane test suite at build time.
 Source80: https://github.com/cyrusimap/cassandane/archive/%cocas/cassandane-${cocas_short}.tar.gz#/cassandane-%{scmt %cocas}.tar.gz
@@ -108,6 +109,8 @@ BuildRequires: python3-sphinx
 
 # Miscellaneous modules needed for 'make check' to function:
 BuildRequires: cyrus-sasl-plain cyrus-sasl-md5
+
+BuildRequires: systemd-rpm-macros
 
 %if %{with cassandane}
 # Additional packages required for cassandane to function
@@ -155,8 +158,10 @@ BuildRequires: make
 
 Requires(pre): shadow-utils
 %{?systemd_requires}
+%{?sysusers_requires_compat}
 
-Requires: %name-utils = %version-%release
+Requires: cyrus-imapd-libs%{?_isa} = %{version}-%{release}
+Requires: cyrus-imapd-utils = %{version}-%{release}
 Requires: file sscg
 Requires: perl(:MODULE_COMPAT_%(eval "`%{__perl} -V:version`"; echo $version))
 
@@ -187,7 +192,7 @@ hierarchies.
 
 %package devel
 Summary: Cyrus IMAP server development files
-Requires: %name%{?_isa} = %version-%release
+Requires: cyrus-imapd-libs%{?_isa} = %{version}-%{release}
 Requires: pkgconfig
 
 %description devel
@@ -215,7 +220,8 @@ and the its utilities.
 
 %package utils
 Summary: Cyrus IMAP server administration utilities
-Requires: cyrus-imapd = %{version}-%{release}
+Requires: cyrus-imapd-libs%{?_isa} = %{version}-%{release}
+Requires: perl-Cyrus = %{version}-%{release}
 
 %description utils
 The cyrus-imapd-utils package contains administrative tools for the
@@ -225,6 +231,7 @@ one running the server.
 
 %package virusscan
 Summary: Cyrus virus scanning utility
+Requires: cyrus-imapd-libs%{?_isa} = %{version}-%{release}
 
 %description virusscan
 The cyrus-imapd-virusscan package contains the cyr_virusscan utility.  It
@@ -410,6 +417,8 @@ install -p -m 644 doc/examples/imapd_conf/normal.conf %buildroot/etc/imapd.conf
 install -p -D -m 644 %SOURCE16 %buildroot/%_unitdir/cyrus-imapd.service
 install -p -D -m 644 %SOURCE17 %buildroot/%_unitdir/cyrus-imapd-init.service
 install -p -D -m 644 %SOURCE18 %buildroot/%_tmpfilesdir/cyrus-imapd.conf
+# systemd-sysusers
+install -p -D -m 644 %{SOURCE19} %{buildroot}%{_sysusersdir}/cyrus-imapd.conf
 
 # Cleanup of doc dir
 find doc perl -name CVS -type d -prune -exec rm -rf {} \;
@@ -548,10 +557,7 @@ exclude+=("!Master.maxforkrate")
 
 
 %pre
-# Create 'cyrus' user on target host
-getent group saslauth >/dev/null || /usr/sbin/groupadd -g %gid -r saslauth
-getent passwd cyrus >/dev/null || /usr/sbin/useradd -c "Cyrus IMAP Server" -d /var/lib/imap -g %cyrusgroup \
-  -G saslauth -s /sbin/nologin -u %uid -r %cyrususer
+%sysusers_create_compat %{SOURCE19}
 
 %post
 %systemd_post cyrus-imapd.service
@@ -593,6 +599,7 @@ getent passwd cyrus >/dev/null || /usr/sbin/useradd -c "Cyrus IMAP Server" -d /v
 %_unitdir/cyrus-imapd.service
 %_unitdir/cyrus-imapd-init.service
 %_tmpfilesdir/cyrus-imapd.conf
+%{_sysusersdir}/cyrus-imapd.conf
 
 %dir %cyrexecdir/
 %cyrexecdir/[a-uw-z]*
@@ -664,6 +671,15 @@ getent passwd cyrus >/dev/null || /usr/sbin/useradd -c "Cyrus IMAP Server" -d /v
 
 
 %changelog
+* Tue Aug 01 2023 Martin Osvald <mosvald@redhat.com> - 3.4.1-10
+- Resolves: #2095381 - Use systemd-sysusers for cyrus user and group
+
+* Tue Aug 01 2023 Martin Osvald <mosvald@redhat.com> - 3.4.1-9
+- Resolves: #2228035 - Fix rpminspect CI errors
+
+* Sun Jul 23 2023 Martin Osvald <mosvald@redhat.com> - 3.4.1-8
+- Resolves: #2169709 - Remove utils dependency on main package
+
 * Wed Aug 17 2022 Martin Osvald <mosvald@redhat.com> - 3.4.1-7
 - Resolves: #2096149 - Fatal error when running "squatter -r user"
 - Resolves: #2096885 - Enhanced TMT testing for centos-stream
