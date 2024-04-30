@@ -14,7 +14,7 @@
 
 Name: cyrus-imapd
 Version: 3.4.1
-Release: 10%{?dist}
+Release: 11%{?dist}
 
 
 %define ssl_pem_file_prefix /etc/pki/%name/%name
@@ -48,17 +48,25 @@ Patch1: patch-cyrus-default-configs
 # place in the source must be patched to match.
 Patch2: patch-cyrus-rename-quota
 
-
 # Workaround for some compiled Perl modules not being linked against
 # libpcreposix, which causes them to fail to load.
 # https://bugzilla.redhat.com/show_bug.cgi?id=1668723
 # https://github.com/cyrusimap/cyrus-imapd/issues/2629#issuecomment-456925909
 Patch4: patch-cyrus-perl-linking
 
-Patch5: cyrus-imapd-CVE-2021-33582.patch
-Patch6: fix-broken-delivery-to-shared-mailboxes.patch
+Patch5: patch-cyrus-CVE-2021-33582
+Patch6: patch-cyrus-fix-broken-delivery-to-shared-mailboxes
+
 # https://github.com/cyrusimap/cyrus-imapd/pull/3892
-Patch7: cyrus-imapd-squatter-assert-crash.patch
+Patch7: patch-cyrus-squatter-assert-crash
+
+# https://issues.redhat.com/browse/RHEL-20925
+# https://github.com/cyrusimap/cyrus-imapd/issues/3240
+# was fixed upstream in 3.2 by:
+# https://github.com/cyrusimap/cyrus-imapd/pull/3577
+# for 3.4 and up the below fix got used instead:
+# https://github.com/cyrusimap/cyrus-imapd/pull/4240
+Patch8: patch-cyrus-seen-unseen-flag
 
 Source10: cyrus-imapd.logrotate
 Source11: cyrus-imapd.pam-config
@@ -89,6 +97,9 @@ Source91: patch-cassandane-no-syslog
 # Upstream ticket https://github.com/cyrusimap/cyrus-imapd/issues/1995
 Source92: patch-cassandane-fix-annotator
 
+# Regression test for RHEL-20925
+# https://github.com/cyrusimap/cyrus-imapd/commit/b78c39153f96f473c1b0bbac8f8762c0ad4c64cc
+Source93: patch-cassandane-seen-unseen-flag
 
 BuildRequires: autoconf automake bison flex gcc gcc-c++ git glibc-langpack-en
 BuildRequires: groff libtool pkgconfig rsync systemd transfig
@@ -265,6 +276,7 @@ tar xf %SOURCE81
 
 patch -p1 < %SOURCE91
 patch -p1 < %SOURCE92
+patch -p1 < %SOURCE93
 
 cp %SOURCE82 cassandane.ini
 # RF rpm-buildroot-usage
@@ -671,6 +683,11 @@ exclude+=("!Master.maxforkrate")
 
 
 %changelog
+* Thu Feb 08 2024 Martin Osvald <mosvald@redhat.com> - 3.4.1-11
+- Resolves: RHEL-20925 - Seen/Unseen Flag not working correctly
+  for shared mailboxes
+- cyrus-imapd.spec: rename patches to correspond with others
+
 * Tue Aug 01 2023 Martin Osvald <mosvald@redhat.com> - 3.4.1-10
 - Resolves: #2095381 - Use systemd-sysusers for cyrus user and group
 
