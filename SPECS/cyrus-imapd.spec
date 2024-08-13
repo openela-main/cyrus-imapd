@@ -9,7 +9,7 @@
 
 Name: cyrus-imapd
 Version: 3.0.7
-Release: 24%{?dist}
+Release: 26%{?dist}
 
 %define ssl_pem_file_prefix /etc/pki/%name/%name
 
@@ -52,6 +52,8 @@ Patch12: cyrus-imapd-3.0-CVE-2021-33582.patch
 Patch13: cyrus-squatter-assert-crash.patch
 # https://github.com/cyrusimap/cyrus-imapd/commit/562ac9d7abd3b928315c7f0672d0f1a8995ca625
 Patch14: cyrus-imapd-load-tombstones-for-cleanup.patch
+# https://github.com/cyrusimap/cyrus-imapd/commit/ed1a17b09e2e03788852e122f213b88352bc24b9
+Patch15: cyrus-imapd-ptclient-canonification_across_multiple_domains.patch
 
 Source10: cyrus-imapd.logrotate
 Source11: cyrus-imapd.pam-config
@@ -689,6 +691,13 @@ getent passwd cyrus >/dev/null || /usr/sbin/useradd -c "Cyrus IMAP Server" -d /v
 
 
 %changelog
+* Mon Jul 01 2024 Martin Osvald <mosvald@redhat.com> - 3.0.7-26
+- Update fmf plans and gating for c8s
+
+* Sat Jun 22 2024 Martin Osvald <mosvald@redhat.com> - 3.0.7-25
+- ptclient: implement canonification across multiple domains
+  Resolves: RHEL-10710
+
 * Mon Jun 13 2022 Martin Osvald <mosvald@redhat.com> - 3.0.7-24
 - Resolves: #1911689 - Fatal error when running "squatter -r user"
 - Resolves: #1941255 - Wait for network-online target
