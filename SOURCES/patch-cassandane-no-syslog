@@ -1,30 +1,8 @@
-diff --git a/Cassandane/Util/Log.pm b/Cassandane/Util/Log.pm
-index 17d2cc7..11b747f 100644
---- a/Cassandane/Util/Log.pm
-+++ b/Cassandane/Util/Log.pm
-@@ -51,9 +51,6 @@ our @EXPORT = qw(
- 
- my $verbose = 0;
- 
--openlog('cassandane', '', LOG_LOCAL6)
--    or die "Cannot openlog";
--
- sub xlog
- {
-     my $id;
-@@ -70,7 +67,6 @@ sub xlog
-     $msg .= "($id) " if $id;
-     $msg .= join(' ', @_);
-     print STDERR "$msg\n";
--    syslog(LOG_ERR, "$msg");
- }
- 
- sub set_verbose
-diff --git a/Cassandane/Instance.pm b/Cassandane/Instance.pm
-index bdfa44f..e852599 100644
---- a/Cassandane/Instance.pm
-+++ b/Cassandane/Instance.pm
-@@ -2030,12 +2030,8 @@ sub setup_syslog_replacement
+diff --git a/cassandane/Cassandane/Instance.pm b/cassandane/Cassandane/Instance.pm
+index da47518..53df2dd 100644
+--- a/cassandane/Cassandane/Instance.pm
++++ b/cassandane/Cassandane/Instance.pm
+@@ -2179,12 +2179,8 @@ sub setup_syslog_replacement
  {
      my ($self) = @_;
  
@@ -39,3 +17,25 @@ index bdfa44f..e852599 100644
  
      $self->{syslog_fname} = "$self->{basedir}/conf/log/syslog";
      $self->{have_syslog_replacement} = 1;
+diff --git a/cassandane/Cassandane/Util/Log.pm b/cassandane/Cassandane/Util/Log.pm
+index 2720801..73ae390 100644
+--- a/cassandane/Cassandane/Util/Log.pm
++++ b/cassandane/Cassandane/Util/Log.pm
+@@ -52,9 +52,6 @@ our @EXPORT = qw(
+ 
+ my $verbose = 0;
+ 
+-openlog('cassandane', '', LOG_LOCAL6)
+-    or die "Cannot openlog";
+-
+ sub xlog
+ {
+     my $id;
+@@ -89,7 +86,6 @@ sub xlog
+     else {
+         print STDERR "$msg\n";
+     }
+-    syslog(LOG_ERR, "$msg");
+ }
+ 
+ sub set_verbose
