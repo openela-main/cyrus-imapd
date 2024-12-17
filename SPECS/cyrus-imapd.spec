@@ -9,7 +9,7 @@
 
 Name: cyrus-imapd
 Version: 3.0.7
-Release: 26%{?dist}
+Release: 27%{?dist}
 
 %define ssl_pem_file_prefix /etc/pki/%name/%name
 
@@ -54,6 +54,8 @@ Patch13: cyrus-squatter-assert-crash.patch
 Patch14: cyrus-imapd-load-tombstones-for-cleanup.patch
 # https://github.com/cyrusimap/cyrus-imapd/commit/ed1a17b09e2e03788852e122f213b88352bc24b9
 Patch15: cyrus-imapd-ptclient-canonification_across_multiple_domains.patch
+# https://github.com/cyrusimap/cyrus-imapd/commit/1152ce70af232fc4200bbeca18961f99e12d73df
+Patch16: patch-cyrus-ldap-group-retriaval
 
 Source10: cyrus-imapd.logrotate
 Source11: cyrus-imapd.pam-config
@@ -691,6 +693,10 @@ getent passwd cyrus >/dev/null || /usr/sbin/useradd -c "Cyrus IMAP Server" -d /v
 
 
 %changelog
+* Tue Oct 29 2024 Martin Osvald <mosvald@redhat.com> - 3.0.7-27
+- Fix regression while retrieving ldap group names
+- Resolves: RHEL-61691
+
 * Mon Jul 01 2024 Martin Osvald <mosvald@redhat.com> - 3.0.7-26
 - Update fmf plans and gating for c8s
 

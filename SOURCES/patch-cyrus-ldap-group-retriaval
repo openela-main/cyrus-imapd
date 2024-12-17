@@ -1,0 +1,32 @@
+commit 1152ce70af232fc4200bbeca18961f99e12d73df
+Author: Felix Schumacher <felix.schumacher@internetallee.de>
+Date:   Wed Feb 6 19:02:11 2019 +0100
+
+    Return correct group names when groups are resolved by filter
+    
+    This fixes an regression, that was introduced with 61f5296c0d727faee4726525a6812b200d946d83.
+    Back then the logic was changed from len(vals) != 1 to two if clauses len(vals) < 1 and len(vals) > 1
+    which logged errors and an else clause (which matched the correct number of len(val) == 1) that
+    got the old error handling code.
+
+diff --git a/ptclient/ldap.c b/ptclient/ldap.c
+index 40c9adee3..457951928 100644
+--- a/ptclient/ldap.c
++++ b/ptclient/ldap.c
+@@ -1336,11 +1336,15 @@ static int ptsmodule_make_authstate_filter(
+             syslog(LOG_ERR, "No values for attribute '%s' on entry '%s'",
+                             ptsm->member_attribute,
+                             errdn);
++            *reply = "no values";
++            rc = PTSM_FAIL;
++            ldap_value_free(vals);
++            vals = NULL;
++            goto done;
+         } else if (ldap_count_values(vals) > 1) {
+             syslog(LOG_ERR, "Too many values for attribute '%s' on entry '%s'",
+                             ptsm->member_attribute,
+                             errdn);
+-        } else {
+             *reply = "too many values";
+             rc = PTSM_FAIL;
+             ldap_value_free(vals);
