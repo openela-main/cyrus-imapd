@@ -1,0 +1,71 @@
+
+https://github.com/cyrusimap/cyrus-imapd/pull/5156
+
+--- cyrus-imapd-3.4.8/imap/tls.c.8	2024-05-06 01:00:03.000000000 +0100
++++ cyrus-imapd-3.4.8/imap/tls.c	2024-12-10 16:22:50.950639737 +0000
+@@ -149,7 +149,8 @@ static int tls_serverengine = 0; /* serv
+ static int tls_clientengine = 0; /* client engine initialized? */
+ static int do_dump = 0;         /* actively dumping protocol? */
+ 
+-#if (OPENSSL_VERSION_NUMBER >= 0x0090800fL)
++#if (OPENSSL_VERSION_NUMBER >= 0x0090800fL) && (OPENSSL_VERSION_NUMBER < 0x10101000L)
++#define HAVE_MANUAL_DH_PARAMS 1
+ static DH *dh_params = NULL;
+ #endif
+ 
+@@ -240,7 +241,7 @@ static int DH_set0_pqg(DH *dh, BIGNUM *p
+ }
+ #endif
+ 
+-#if (OPENSSL_VERSION_NUMBER >= 0x0090800fL)
++#ifdef HAVE_MANUAL_DH_PARAMS
+ /* Logic copied from OpenSSL apps/s_server.c: give the TLS context
+  * DH params to work with DHE-* cipher suites. Hardcoded fallback
+  * in case no DH params in server_key or server_cert.
+@@ -294,7 +295,7 @@ static DH *load_dh_param(const char *dhf
+ 
+     return(ret);
+ }
+-#endif /* OPENSSL_VERSION_NUMBER >= 0x009080fL */
++#endif /* HAVE_MANUAL_DH_PARAMS */
+ 
+ /* taken from OpenSSL apps/s_cb.c */
+ 
+@@ -739,7 +740,6 @@ EXPORTED int     tls_init_serverengine(c
+     const char   *client_ca_file;
+     const char   *server_ca_file;
+     const char   *server_cert_file;
+-    const char   *server_dhparam_file;
+     const char   *server_key_file;
+     const char   *crl_file_path;
+     enum enum_value tls_client_certs;
+@@ -883,7 +883,6 @@ EXPORTED int     tls_init_serverengine(c
+ 
+     server_ca_file = config_getstring(IMAPOPT_TLS_SERVER_CA_FILE);
+     server_cert_file = config_getstring(IMAPOPT_TLS_SERVER_CERT);
+-    server_dhparam_file = config_getstring(IMAPOPT_TLS_SERVER_DHPARAM);
+     server_key_file = config_getstring(IMAPOPT_TLS_SERVER_KEY);
+ 
+     if (config_debug) {
+@@ -949,8 +948,11 @@ EXPORTED int     tls_init_serverengine(c
+     SSL_CTX_set_tmp_rsa_callback(s_ctx, tmp_rsa_cb);
+ #endif
+ 
+-#if (OPENSSL_VERSION_NUMBER >= 0x0090800fL)
++#if (OPENSSL_VERSION_NUMBER >= 0x10101000L)
++    SSL_CTX_set_dh_auto(s_ctx, 1);
++#elif defined(HAVE_MANUAL_DH_PARAMS)
+     /* Load DH params for DHE-* key exchanges */
++    const char *server_dhparam_file = config_getstring(IMAPOPT_TLS_SERVER_DHPARAM);
+     dh_params = load_dh_param(server_dhparam_file, server_key_file, server_cert_file);
+     SSL_CTX_set_tmp_dh(s_ctx, dh_params);
+ #endif
+@@ -1402,7 +1404,7 @@ EXPORTED int tls_shutdown_serverengine(v
+             sess_dbopen = 0;
+         }
+ 
+-#if (OPENSSL_VERSION_NUMBER >= 0x0090800fL)
++#ifdef HAVE_MANUAL_DH_PARAMS
+         if (dh_params) DH_free(dh_params);
+ #endif
+     }

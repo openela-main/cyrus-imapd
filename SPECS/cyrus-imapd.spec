@@ -1,6 +1,6 @@
 Name: cyrus-imapd
 Version: 3.4.8
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: A high-performance email, contacts and calendar server
 License: BSD
 URL: http://www.cyrusimap.org/
@@ -68,6 +68,9 @@ Patch91: patch-cassandane-no-syslog
 # Tell the annotator script to run as the current user/group
 # Upstream ticket https://github.com/cyrusimap/cyrus-imapd/issues/1995
 Patch92: patch-cassandane-fix-annotator
+
+# Upstream PR https://github.com/cyrusimap/cyrus-imapd/pull/5156
+Patch93: patch-cyrus-auto-dh-param
 
 BuildRequires: autoconf automake bison flex gcc gcc-c++ git glibc-langpack-en
 BuildRequires: groff libtool pkgconfig rsync systemd transfig
@@ -810,6 +813,10 @@ fi
 
 
 %changelog
+* Tue Dec 10 2024 Joe Orton <jorton@redhat.com> - 3.4.8-2
+- tls: enable automatic DH parameter selection
+  Resolves: RHEL-70762
+
 * Wed Jun 05 2024 Martin Osvald <mosvald@redhat.com> - 3.4.8-1
 - Update to 3.4.8, fixing CVE-2024-34055
 
