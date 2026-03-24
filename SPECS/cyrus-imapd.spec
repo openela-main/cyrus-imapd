@@ -9,7 +9,7 @@
 
 Name: cyrus-imapd
 Version: 3.0.7
-Release: 27%{?dist}
+Release: 28%{?dist}
 
 %define ssl_pem_file_prefix /etc/pki/%name/%name
 
@@ -55,7 +55,9 @@ Patch14: cyrus-imapd-load-tombstones-for-cleanup.patch
 # https://github.com/cyrusimap/cyrus-imapd/commit/ed1a17b09e2e03788852e122f213b88352bc24b9
 Patch15: cyrus-imapd-ptclient-canonification_across_multiple_domains.patch
 # https://github.com/cyrusimap/cyrus-imapd/commit/1152ce70af232fc4200bbeca18961f99e12d73df
-Patch16: patch-cyrus-ldap-group-retriaval
+Patch16: cyrus-imapd-ldap-group-retriaval.patch
+# https://github.com/cyrusimap/cyrus-imapd/commit/c665af571dc1f9d870d53f2aa4ea29bb5cd52738
+Patch17: cyrus-imapd-fix-index-records-corruption.patch
 
 Source10: cyrus-imapd.logrotate
 Source11: cyrus-imapd.pam-config
@@ -193,6 +195,7 @@ the server.
 
 %package utils
 Summary: Cyrus IMAP server administration utilities
+Requires: %name%{?_isa} = %version-%release
 
 %description utils
 The cyrus-imapd-utils package contains administrative tools for the
@@ -253,7 +256,7 @@ popd
 # Drop expired certificates and generate new ones
 pushd cunit
 rm -rf *pem
-%{_bindir}/sscg --package %{name} --cert-file cert.pem --cert-key-file key.pem --ca-file cacert.pem
+%{_bindir}/sscg --cert-file cert.pem --cert-key-file key.pem --ca-file cacert.pem
 popd
 
 ## Modify docs master --> cyrus-master
@@ -693,6 +696,12 @@ getent passwd cyrus >/dev/null || /usr/sbin/useradd -c "Cyrus IMAP Server" -d /v
 
 
 %changelog
+* Sat Jan 17 2026 Martin Osvald <mosvald@redhat.com> - 3.0.7-28
+- Fix corruption when rewriting older (smaller) index records
+  Resolves: RHEL-136233
+- Fix rpminspect failures
+- Remove sscg option --package from spec file
+
 * Tue Oct 29 2024 Martin Osvald <mosvald@redhat.com> - 3.0.7-27
 - Fix regression while retrieving ldap group names
 - Resolves: RHEL-61691

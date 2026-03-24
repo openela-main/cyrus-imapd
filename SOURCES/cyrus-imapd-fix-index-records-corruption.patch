@@ -1,0 +1,19 @@
+commit c665af571dc1f9d870d53f2aa4ea29bb5cd52738
+Author: Bron Gondwana <brong@fastmailteam.com>
+Date:   Mon Jul 2 17:28:21 2018 +1000
+
+    commit_one: only rewrite the actual record size!
+
+diff --git a/imap/mailbox.c b/imap/mailbox.c
+index da57f0ccb..84f1815b8 100644
+--- a/imap/mailbox.c
++++ b/imap/mailbox.c
+@@ -1798,7 +1798,7 @@ static int _commit_one(struct mailbox *mailbox, struct index_change *change)
+         return IMAP_IOERROR;
+     }
+ 
+-    if (retry_write(mailbox->index_fd, buf, INDEX_RECORD_SIZE) != INDEX_RECORD_SIZE) {
++    if (retry_write(mailbox->index_fd, buf, mailbox->i.record_size) != mailbox->i.record_size) {
+         syslog(LOG_ERR, "IOERROR: writing index record %u for %s: %m",
+                recno, mailbox->name);
+         return IMAP_IOERROR;
