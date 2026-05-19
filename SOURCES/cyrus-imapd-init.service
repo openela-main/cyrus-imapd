@@ -9,4 +9,4 @@ ConditionPathExists=!/etc/pki/cyrus-imapd/cyrus-imapd-ca.pem
 Type=oneshot
 Group=mail
 RemainAfterExit=no
-ExecStart=/usr/bin/sscg --package cyrus-imapd --cert-file /etc/pki/cyrus-imapd/cyrus-imapd.pem --cert-key-file /etc/pki/cyrus-imapd/cyrus-imapd-key.pem --ca-file /etc/pki/cyrus-imapd/cyrus-imapd-ca.pem --cert-key-mode=0640 
+ExecStart=/usr/bin/sscg --cert-file /etc/pki/cyrus-imapd/cyrus-imapd.pem --cert-key-file /etc/pki/cyrus-imapd/cyrus-imapd-key.pem --ca-file /etc/pki/cyrus-imapd/cyrus-imapd-ca.pem --cert-key-mode=0640

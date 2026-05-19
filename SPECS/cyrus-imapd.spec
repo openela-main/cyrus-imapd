@@ -1,6 +1,6 @@
 Name: cyrus-imapd
 Version: 3.4.8
-Release: 2%{?dist}
+Release: 4%{?dist}
 Summary: A high-performance email, contacts and calendar server
 License: BSD
 URL: http://www.cyrusimap.org/
@@ -36,8 +36,8 @@ Source14: cyrus-imapd.cron-daily
 Source15: README.rpm
 Source16: cyrus-imapd.service
 Source17: cyrus-imapd-init.service
-Source18: cyrus-imapd.tmpfiles.conf
-Source19: cyrus-imapd.sysusers
+Source18: systemd-tmpfiles.conf
+Source19: systemd-sysusers.conf
 
 # A template config file for cassandane; we will substitute in varions values.
 Source81: cassandane.ini
@@ -813,6 +813,14 @@ fi
 
 
 %changelog
+* Fri Dec 12 2025 Martin Osvald <mosvald@redhat.com> - 3.4.8-4
+- Create directory structure under /var using tmpfiles.d
+  Resolves: RHEL-129881
+
+* Fri Dec 05 2025 Martin Osvald <mosvald@redhat.com> - 3.4.8-3
+- Remove sscg option --package from cyrus-imapd-init.service
+  Resolves: RHEL-132242
+
 * Tue Dec 10 2024 Joe Orton <jorton@redhat.com> - 3.4.8-2
 - tls: enable automatic DH parameter selection
   Resolves: RHEL-70762
