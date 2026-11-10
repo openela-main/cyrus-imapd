@@ -1,6 +1,6 @@
 Name: cyrus-imapd
 Version: 3.4.8
-Release: 4%{?dist}
+Release: 5%{?dist}
 Summary: A high-performance email, contacts and calendar server
 License: BSD
 URL: http://www.cyrusimap.org/
@@ -60,6 +60,11 @@ Patch4: patch-cyrus-perl-linking
 
 # https://github.com/cyrusimap/cyrus-imapd/pull/3892
 Patch7: patch-cyrus-squatter-assert-crash
+
+# https://issues.redhat.com/browse/RHEL-76907
+# Based only on uidvalidity changes:
+# https://github.com/cyrusimap/cyrus-imapd/commit/51f15f759df60d9a44b5c99ac9a48ccddaea311f
+Patch8: patch-cyrus-fix-missing-uidvalidity-in-mbentry
 
 # Cassandane patches:
 # Prevent cassandane from trying to syslog things
@@ -813,6 +818,11 @@ fi
 
 
 %changelog
+* Wed Feb 11 2026 Martin Osvald <mosvald@redhat.com> - 3.4.8-5
+- reconstruct: Fix missing uidvalidity in mbentry
+  Resolves: RHEL-76907
+- Update rpminspect.yaml to ignore /usr/lib/cyrus-imapd
+
 * Fri Dec 12 2025 Martin Osvald <mosvald@redhat.com> - 3.4.8-4
 - Create directory structure under /var using tmpfiles.d
   Resolves: RHEL-129881

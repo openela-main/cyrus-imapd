@@ -1,0 +1,190 @@
+diff --git a/imap/mailbox.c b/imap/mailbox.c
+index b1e7a99..6d75774 100644
+--- a/imap/mailbox.c
++++ b/imap/mailbox.c
+@@ -6388,6 +6388,39 @@ static int mailbox_reconstruct_uniqueid(struct mailbox *mailbox, int flags)
+     return r;
+ }
+ 
++static int mailbox_reconstruct_uidvalidity(struct mailbox *mailbox, int flags)
++{
++    int make_changes = flags & RECONSTRUCT_MAKE_CHANGES;
++    int prefer_mbentry = flags & RECONSTRUCT_PREFER_MBOXLIST;
++    mbentry_t *mbentry = NULL;
++
++    int r = mboxlist_lookup(mailbox->name, &mbentry, 0);
++    if (r) return r;
++
++    if (mailbox->i.uidvalidity != mbentry->uidvalidity) {
++        if (!mailbox->i.uidvalidity || (prefer_mbentry && mbentry->uidvalidity)) {
++            printf("Wrong uidvalidity in mailbox, fixing %s (%u -> %u)\n",
++                   mailbox->name, mailbox->i.uidvalidity, mbentry->uidvalidity);
++            if (make_changes) {
++                mailbox->i.uidvalidity = mbentry->uidvalidity;
++                mailbox_index_dirty(mailbox);
++            }
++        }
++        else {
++            printf("Wrong uidvalidity in mbentry, fixing %s (%u -> %u)\n",
++                   mailbox->name, mbentry->uidvalidity, mailbox->i.uidvalidity);
++            if (make_changes) {
++                mbentry->uidvalidity = mailbox->i.uidvalidity;
++                r = mboxlist_update(mbentry, 0);
++            }
++        }
++    }
++
++    mboxlist_entry_free(&mbentry);
++
++    return r;
++}
++
+ static int mailbox_reconstruct_acl(struct mailbox *mailbox, int flags)
+ {
+     int make_changes = flags & RECONSTRUCT_MAKE_CHANGES;
+@@ -7109,6 +7142,11 @@ EXPORTED int mailbox_reconstruct(const char *name, int flags)
+     r = mailbox_reconstruct_uniqueid(mailbox, flags);
+     if (r) goto close;
+ 
++    if (flags & RECONSTRUCT_FIX_UIDVALIDITY) {
++        r = mailbox_reconstruct_uidvalidity(mailbox, flags);
++        if (r) goto close;
++    }
++
+     /* open and lock the annotation state */
+     r = mailbox_get_annotate_state(mailbox, ANNOTATE_ANY_UID, NULL);
+     if (r) {
+diff --git a/imap/mailbox.h b/imap/mailbox.h
+index fd04e41..0e1dac0 100644
+--- a/imap/mailbox.h
++++ b/imap/mailbox.h
+@@ -456,6 +456,7 @@ typedef enum _MsgInternalFlags {
+ #define RECONSTRUCT_REMOVE_ODDFILES (1<<7)
+ #define RECONSTRUCT_IGNORE_ODDFILES (1<<8)
+ #define RECONSTRUCT_PREFER_MBOXLIST (1<<9)
++#define RECONSTRUCT_FIX_UIDVALIDITY (1<<10)
+ 
+ #define MAX_CACHED_HEADER_SIZE 32 /* Max size of a cached header name */
+ 
+diff --git a/imap/reconstruct.c b/imap/reconstruct.c
+index dc6d0f6..82425a1 100644
+--- a/imap/reconstruct.c
++++ b/imap/reconstruct.c
+@@ -56,6 +56,7 @@
+ #include <netinet/in.h>
+ #include <sys/stat.h>
+ #include <libgen.h>
++#include <getopt.h>
+ #ifdef HAVE_ZLIB
+ #include <zlib.h>
+ #endif
+@@ -129,6 +130,11 @@ static int reconstruct_flags = RECONSTRUCT_MAKE_CHANGES | RECONSTRUCT_DO_STAT;
+ static int setversion = 0;
+ static int updateuniqueids = 0;
+ 
++static struct option long_options[] = {
++    {"fix-uidvalidity", no_argument, NULL, 1},
++    {NULL, 0, NULL, 0}
++};
++
+ int main(int argc, char **argv)
+ {
+     int opt, i, r;
+@@ -146,7 +152,7 @@ int main(int argc, char **argv)
+ 
+     construct_hash_table(&unqid_table, 2047, 1);
+ 
+-    while ((opt = getopt(argc, argv, "C:kp:rmfsxgGqRUMIoOnV:u")) != EOF) {
++    while ((opt = getopt_long(argc, argv, "C:kp:rmfsxgGqRUMIoOnV:u", long_options, NULL)) != EOF) {
+         switch (opt) {
+         case 'C': /* alt config file */
+             alt_config = optarg;
+@@ -231,6 +237,10 @@ int main(int argc, char **argv)
+                 setversion = atoi(optarg);
+             break;
+ 
++        case 1: /* --fix-uidvalidity */
++            reconstruct_flags |= RECONSTRUCT_FIX_UIDVALIDITY;
++            break;
++
+         default:
+             usage();
+         }
+@@ -410,6 +420,7 @@ static void usage(void)
+     fprintf(stderr, "-M                 prefer mailboxes.db over cyrus.header\n");
+     fprintf(stderr, "-V <version>       Change the cyrus.index minor version to the version specified\n");
+     fprintf(stderr, "-u                 give usernames instead of mailbox prefixes\n");
++    fprintf(stderr, "--fix-uidvalidity  fix uidvalidity mismatches between mailbox index and mailboxes.db\n");
+ 
+     fprintf(stderr, "\n");
+ 
+diff --git a/docsrc/imap/reference/manpages/systemcommands/reconstruct.rst b/docsrc/imap/reference/manpages/systemcommands/reconstruct.rst
+--- a/docsrc/imap/reference/manpages/systemcommands/reconstruct.rst
++++ b/docsrc/imap/reference/manpages/systemcommands/reconstruct.rst
+@@ -18,10 +18,10 @@
+     **reconstruct** [ **-C** *config-file* ] [ **-p** *partition* ] [ **-x** ] [ **-r** ]
+         [ **-f** ] [ **-U** ] [ **-s** ] [ **-q** ] [ **-G** ] [ **-R** ] [ **-o** ]
+-        [ **-O** ] [ **-M** ] *mailbox*...
++        [ **-O** ] [ **-M** ] [ **--fix-uidvalidity** ] *mailbox*...
+ 
+     **reconstruct** [ **-C** *config-file* ] [ **-p** *partition* ] [ **-x** ] [ **-r** ]
+         [ **-f** ] [ **-U** ] [ **-s** ] [ **-q** ] [ **-G** ] [ **-R** ] [ **-o** ]
+-        [ **-O** ] [ **-M** ] **-u** *user*...
++        [ **-O** ] [ **-M** ] [ **--fix-uidvalidity** ] **-u** *user*...
+ 
+     **reconstruct** [ **-C** *config-file* ] [ **-p** *partition* ] [ **-r** ]
+         [ **-q** ] **-V** *version* *mailbox*...
+@@ -161,6 +161,17 @@
+ .. option:: -u
+ 
+     Instead of mailbox prefixes, give usernames on the command line
++
++.. option:: --fix-uidvalidity
++
++    Detect and fix uidvalidity mismatches between the mailbox index (cyrus.index)
++    and the mailboxes database (mailboxes.db).  If the index has a missing or zero
++    uidvalidity, it is copied from the database.  Otherwise the database is updated
++    to match the index, unless **-M** is also given, in which case the index is
++    updated to match the database.
++
++    This option is specific to the Red Hat build of Cyrus IMAP and is not present
++    in the upstream release.
+ 
+ Examples
+ ========
+diff --git a/man/reconstruct.8 b/man/reconstruct.8
+--- a/man/reconstruct.8
++++ b/man/reconstruct.8
+@@ -41,10 +41,10 @@
+ \fBreconstruct\fP [ \fB\-C\fP \fIconfig\-file\fP ] [ \fB\-p\fP \fIpartition\fP ] [ \fB\-x\fP ] [ \fB\-r\fP ]
+     [ \fB\-f\fP ] [ \fB\-U\fP ] [ \fB\-s\fP ] [ \fB\-q\fP ] [ \fB\-G\fP ] [ \fB\-R\fP ] [ \fB\-o\fP ]
+-    [ \fB\-O\fP ] [ \fB\-M\fP ] \fImailbox\fP\&...
++    [ \fB\-O\fP ] [ \fB\-M\fP ] [ \fB\-\-fix\-uidvalidity\fP ] \fImailbox\fP\&...
+ 
+ \fBreconstruct\fP [ \fB\-C\fP \fIconfig\-file\fP ] [ \fB\-p\fP \fIpartition\fP ] [ \fB\-x\fP ] [ \fB\-r\fP ]
+     [ \fB\-f\fP ] [ \fB\-U\fP ] [ \fB\-s\fP ] [ \fB\-q\fP ] [ \fB\-G\fP ] [ \fB\-R\fP ] [ \fB\-o\fP ]
+-    [ \fB\-O\fP ] [ \fB\-M\fP ] \fB\-u\fP \fIuser\fP\&...
++    [ \fB\-O\fP ] [ \fB\-M\fP ] [ \fB\-\-fix\-uidvalidity\fP ] \fB\-u\fP \fIuser\fP\&...
+ 
+ \fBreconstruct\fP [ \fB\-C\fP \fIconfig\-file\fP ] [ \fB\-p\fP \fIpartition\fP ] [ \fB\-r\fP ]
+     [ \fB\-q\fP ] \fB\-V\fP \fIversion\fP \fImailbox\fP\&...
+@@ -199,6 +199,19 @@
+ .B \-u
+ Instead of mailbox prefixes, give usernames on the command line
+ .UNINDENT
++.INDENT 0.0
++.TP
++.B \-\-fix\-uidvalidity
++Detect and fix uidvalidity mismatches between the mailbox index
++(cyrus.index) and the mailboxes database (mailboxes.db).
++If the index has a missing or zero uidvalidity, it is copied from the
++database. Otherwise the database is updated to match the index, unless
++\fB\-M\fP is also given, in which case the index is updated to match
++the database.
++.sp
++This option is specific to the Red Hat build of Cyrus IMAP and is not
++present in the upstream release.
++.UNINDENT
+ .SH EXAMPLES
+ .INDENT 0.0
+ .INDENT 3.5
